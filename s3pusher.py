@@ -34,9 +34,16 @@ class FileEventHandler(FileSystemEventHandler):
                 logging.debug("File is stable: %s", modified_file)
 
                 try:
-                    s3_object_key = self.get_s3_object_key(hostname=self.hostname, filename=modified_file)
+                    s3_object_key = self.get_s3_object_key(
+                        hostname=self.hostname, filename=modified_file
+                    )
                     if self.bucket:
-                        logging.info("Uploading %s as %s/%s", modified_file, self.bucket, s3_object_key)
+                        logging.info(
+                            "Uploading %s as %s/%s",
+                            modified_file,
+                            self.bucket,
+                            s3_object_key,
+                        )
                         s3_client = boto3.client("s3")
                         with open(modified_file, "rb") as fp:
                             s3_client.upload_fileobj(fp, self.bucket, s3_object_key)
@@ -49,7 +56,9 @@ class FileEventHandler(FileSystemEventHandler):
                     time.sleep(EXCEPTION_DELAY_SECONDS)
 
     @staticmethod
-    def get_s3_object_key(filename: Path | None = None, hostname: str | None = None) -> str:
+    def get_s3_object_key(
+        filename: Path | None = None, hostname: str | None = None
+    ) -> str:
         """Get S3 object key from filename"""
         dt = datetime.now(tz=UTC)
         fields_dict = {
