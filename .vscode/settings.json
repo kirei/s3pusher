@@ -1,9 +1,4 @@
 {
-        "ruff.fixAll": true,
-        "editor.codeActionsOnSave": {
-                 "source.organizeImports": "explicit"
-        },
-        "editor.defaultFormatter": "charliermarsh.ruff",
-        "editor.formatOnSave": true,
-        "editor.formatOnPaste": true
+    "ruff.lineLength": 120,
+    "editor.defaultFormatter": "charliermarsh.ruff"
 }
