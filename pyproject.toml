@@ -1,0 +1,50 @@
+[project]
+name = "s3pusher"
+dynamic = ["version"]
+description = "S3 Pusher Helper"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "boto3>=1.42.52",
+    "watchdog>=6.0.0",
+]
+
+[project.scripts]
+s3pusher = "s3pusher:main"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.1",
+]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = false
+combine-as-imports = true
+split-on-trailing-comma = false
