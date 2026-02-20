@@ -7,7 +7,7 @@ from pathlib import Path
 
 import boto3
 import structlog
-from watchdog.events import FileModifiedEvent, FileSystemEvent, FileSystemEventHandler
+from watchdog.events import DirModifiedEvent, FileModifiedEvent, FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 STABLE_FILE_DELAY_SECONDS = 1
@@ -23,38 +23,49 @@ class ThePusher(FileSystemEventHandler):
         self.logger = structlog.get_logger()
 
     def on_any_event(self, event: FileSystemEvent) -> None:
-        self.logger.debug("Event %s detected", event)
+        if isinstance(event, DirModifiedEvent):
+            self.logger.debug("Directory modified", directory=event.src_path)
+            directory = Path(event.src_path)
+            if directory.is_dir():
+                self.upload_directory_to_s3(directory)
+        elif isinstance(event, FileModifiedEvent):
+            self.logger.debug("File modified", filename=event.src_path)
+            filename = Path(event.src_path)
+            if filename.is_file():
+                self.upload_file_to_s3(filename)
+        else:
+            self.logger.debug("Ignoring unsupported event type", event_type=type(event).__name__)
 
-        if isinstance(event, FileModifiedEvent):
-            modified_file = Path(event.src_path)
+    def upload_directory_to_s3(self, directory: Path) -> None:
+        """Upload all files in a directory to S3 and delete them if upload is successful"""
 
-            with structlog.contextvars.bound_contextvars(filename=str(modified_file)):
-                if not modified_file.is_file():
-                    return
+        for filename in directory.glob("*"):
+            if filename.is_file():
+                self.upload_file_to_s3(filename)
 
-                self.logger.info("File modified")
+    def upload_file_to_s3(self, filename: Path) -> None:
+        """Upload file to S3 and delete it if upload is successful"""
 
-                if self.wait_for_stable_file(modified_file):
-                    try:
-                        s3_object_key = self.get_s3_object_key(hostname=self.hostname, filename=modified_file)
-                        if self.bucket:
-                            with structlog.contextvars.bound_contextvars(
-                                s3_bucket=self.bucket, s3_object_key=s3_object_key
-                            ):
-                                self.logger.debug("Uploading file")
-                                s3_client = boto3.client("s3")
-                                t1 = time.time()
-                                with open(modified_file, "rb") as fp:
-                                    s3_client.upload_fileobj(fp, self.bucket, s3_object_key)
-                                t2 = time.time()
-                                self.logger.info("File uploaded", s3_upload_seconds=round(t2 - t1, 3))
-                            modified_file.unlink()
-                            self.logger.info("File deleted")
-                        else:
-                            self.logger.warning("File upload skipped")
-                    except Exception as exc:
-                        self.logger.error("Failed to upload", exception=str(exc))
-                        time.sleep(EXCEPTION_DELAY_SECONDS)
+        with structlog.contextvars.bound_contextvars(filename=str(filename)):
+            if not self.wait_for_stable_file(filename):
+                return
+
+            try:
+                s3_client = boto3.client("s3")
+                s3_object_key = self.get_s3_object_key(hostname=self.hostname, filename=filename)
+                with structlog.contextvars.bound_contextvars(s3_bucket=self.bucket, s3_object_key=s3_object_key):
+                    self.logger.debug("Uploading file")
+                    s3_client = boto3.client("s3")
+                    t1 = time.time()
+                    with open(filename, "rb") as fp:
+                        s3_client.upload_fileobj(fp, self.bucket, s3_object_key)
+                    t2 = time.time()
+                    self.logger.info("File uploaded", s3_upload_seconds=round(t2 - t1, 3))
+                filename.unlink()
+                self.logger.info("File deleted")
+            except Exception as exc:
+                self.logger.error("Failed to upload", exception=str(exc))
+                time.sleep(EXCEPTION_DELAY_SECONDS)
 
     @staticmethod
     def get_s3_object_key(filename: Path | None = None, hostname: str | None = None) -> str:
@@ -136,9 +147,11 @@ def main():
     logger.info("Watching directories for changes", directories=args.directory)
 
     event_handler = ThePusher(bucket=args.bucket, hostname=args.hostname)
+
     observer = Observer()
 
     for directory in args.directory:
+        event_handler.upload_directory_to_s3(Path(directory))
         observer.schedule(event_handler, directory)
     observer.start()
 
