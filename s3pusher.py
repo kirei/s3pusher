@@ -22,7 +22,7 @@ class ThePusher(FileSystemEventHandler):
         self.hostname = hostname
         self.logger = structlog.get_logger()
 
-    def on_any_event(self, event: FileSystemEvent) -> None:
+    def on_modified(self, event: FileSystemEvent) -> None:
         if isinstance(event, DirModifiedEvent):
             self.logger.debug("Directory modified", directory=event.src_path)
             directory = Path(event.src_path)
