@@ -114,7 +114,7 @@ def main():
     parser = argparse.ArgumentParser(description="S3 Pusher")
 
     parser.add_argument("directory", nargs="+", help="Directory to watch for changes")
-    parser.add_argument("--bucket", default=None, help="S3 bucket name")
+    parser.add_argument("--bucket", default=None, required=True, help="S3 bucket name (required)")
     parser.add_argument(
         "--hostname",
         required=False,
