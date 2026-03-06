@@ -15,9 +15,8 @@ positional arguments:
 
 options:
   -h, --help           show this help message and exit
-  --bucket BUCKET      S3 bucket name
-  --hostname HOSTNAME  Hostname to include in S3 object key
-  --log-json           Log in JSON format
+  --bucket BUCKET      S3 bucket name (S3PUSHER_BUCKET environment variable can also be used)
+  --hostname HOSTNAME  Hostname to include in S3 object key (S3PUSHER_HOSTNAME environment variable can also be used)  --log-json           Log in JSON format
   --debug              Enable debugging
 ```
 

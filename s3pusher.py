@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import time
 import uuid
 from datetime import UTC, datetime
@@ -114,12 +115,16 @@ def main():
     parser = argparse.ArgumentParser(description="S3 Pusher")
 
     parser.add_argument("directory", nargs="+", help="Directory to watch for changes")
-    parser.add_argument("--bucket", default=None, required=True, help="S3 bucket name (required)")
+    parser.add_argument(
+        "--bucket",
+        default=None,
+        help="S3 bucket name (S3PUSHER_BUCKET environment variable can also be used)",
+    )
     parser.add_argument(
         "--hostname",
         required=False,
         default=None,
-        help="Hostname to include in S3 object key",
+        help="Hostname to include in S3 object key (S3PUSHER_HOSTNAME environment variable can also be used)",
     )
     parser.add_argument("--log-json", action="store_true", help="Log in JSON format")
     parser.add_argument("--debug", action="store_true", help="Enable debugging")
@@ -141,12 +146,19 @@ def main():
         cache_logger_on_first_use=False,
     )
 
-    if not args.bucket:
-        logger.warning("No S3 bucket specified, file upload will be skipped")
+    if bucket := args.bucket or os.getenv("S3PUSHER_BUCKET"):
+        logger.info("Bucket configured", bucket=bucket)
+    else:
+        logger.warning("No bucket configured (file upload will be skipped)")
+
+    if hostname := args.hostname or os.getenv("S3PUSHER_HOSTNAME"):
+        logger.info("Hostname configured", hostname=hostname)
+    else:
+        logger.info("No hostname configured")
 
     logger.info("Watching directories for changes", directories=args.directory)
 
-    event_handler = ThePusher(bucket=args.bucket, hostname=args.hostname)
+    event_handler = ThePusher(bucket=bucket, hostname=hostname)
 
     observer = Observer()
 
