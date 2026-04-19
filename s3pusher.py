@@ -211,7 +211,7 @@ def main():
         parser.error(str(exc))
 
     if object_kvs:
-        logger.info(f"Configured with object fields {object_kvs}")
+        logger.info("Configured with object fields", object_kvs=object_kvs)
 
     logger.info("Watching directories for changes", directories=args.directory)
 
