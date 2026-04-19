@@ -17,7 +17,7 @@ options:
   -h, --help           show this help message and exit
   --bucket BUCKET      S3 bucket name (S3PUSHER_BUCKET environment variable can also be used)
   --fields FIELDS      Comma separated list of key=value pairs to include in S3 object key (S3PUSHER_FIELDS environment variable can also be used)
-   -log-json           Log in JSON format
+  --log-json           Log in JSON format
   --debug              Enable debugging
 ```
 
