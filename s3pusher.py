@@ -51,18 +51,18 @@ class ThePusher(FileSystemEventHandler):
     def upload_file_to_s3(self, filename: Path) -> None:
         """Upload file to S3 and delete it if upload is successful"""
 
-        with structlog.contextvars.bound_contextvars(filename=str(filename)):
+        s3_object_key = self.get_s3_object_key(filename=filename)
+
+        with structlog.contextvars.bound_contextvars(filename=str(filename), s3_object_key=s3_object_key):
             if not self.wait_for_stable_file(filename):
                 return
 
-            s3_object_key = self.get_s3_object_key(filename=filename)
-
             if not self.bucket:
-                self.logger.warning(f"No bucket configured, skipping upload to {s3_object_key}")
+                self.logger.warning("No bucket configured, skipping upload")
                 return
 
             try:
-                with structlog.contextvars.bound_contextvars(s3_bucket=self.bucket, s3_object_key=s3_object_key):
+                with structlog.contextvars.bound_contextvars(s3_bucket=self.bucket):
                     self.logger.debug("Uploading file")
                     s3_client = boto3.client("s3")
                     t1 = time.time()
