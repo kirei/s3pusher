@@ -204,7 +204,8 @@ def main():
         # Add hostname to object_kvs if configured via environment variable (for backwards compatibility)
         if hostname := os.getenv("S3PUSHER_HOSTNAME"):
             if FIELD_KV_RE.match(hostname):
-                object_kvs["hostname"] = hostname
+                if "hostname" not in object_kvs:
+                    object_kvs["hostname"] = hostname
             else:
                 raise ValueError(f"Invalid hostname value '{hostname}'")
     except ValueError as exc:
