@@ -18,7 +18,7 @@ EXCEPTION_DELAY_SECONDS = 60
 logger = structlog.get_logger()
 
 RESERVED_FIELD_NAMES = {"year", "month", "day", "hour", "minute", "second", "uuid"}
-FIELD_KV_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+FIELD_KV_RE = re.compile(r"^[a-zA-Z0-9_\-\.]+$")
 
 
 class ThePusher(FileSystemEventHandler):
@@ -137,10 +137,18 @@ def get_object_kvs(fields_str: str) -> dict[str, str]:
         if not v:
             raise ValueError(f"Field value for key '{k}' is empty")
 
-        if FIELD_KV_RE.match(k) and FIELD_KV_RE.match(v):
-            object_kvs[k] = v
-        else:
-            raise ValueError(f"Invalid field key or value: '{field}'")
+        if not FIELD_KV_RE.match(k):
+            raise ValueError(
+                f"Invalid characters in field key '{k}'"
+                + " (only letters, numbers, period, underscores and hyphens are allowed)"
+            )
+        if not FIELD_KV_RE.match(v):
+            raise ValueError(
+                f"Invalid characters in field value '{v}' for key '{k}'"
+                + " (only letters, numbers, period, underscores and hyphens are allowed)"
+            )
+
+        object_kvs[k] = v
 
     return object_kvs
 
@@ -193,7 +201,10 @@ def main():
 
     # Add hostname to object_kvs if configured via environment variable (for backwards compatibility)
     if hostname := os.getenv("S3PUSHER_HOSTNAME"):
-        object_kvs["hostname"] = hostname
+        if FIELD_KV_RE.match(hostname):
+            object_kvs["hostname"] = hostname
+        else:
+            raise ValueError(f"Invalid hostname value '{hostname}'")
 
     if object_kvs:
         logger.info("Configured with object fields %s", object_kvs)
