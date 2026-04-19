@@ -51,12 +51,12 @@ class ThePusher(FileSystemEventHandler):
     def upload_file_to_s3(self, filename: Path) -> None:
         """Upload file to S3 and delete it if upload is successful"""
 
+        if not self.wait_for_stable_file(filename):
+            return
+
         s3_object_key = self.get_s3_object_key(filename=filename)
 
         with structlog.contextvars.bound_contextvars(filename=str(filename), s3_object_key=s3_object_key):
-            if not self.wait_for_stable_file(filename):
-                return
-
             if not self.bucket:
                 self.logger.warning("No bucket configured, skipping upload")
                 return
@@ -101,19 +101,20 @@ class ThePusher(FileSystemEventHandler):
         start_time = time.time()
         last_size = -1
 
-        while time.time() - start_time < timeout:
-            try:
-                current_size = filename.stat().st_size
-                if current_size == last_size:
-                    self.logger.debug("File is stable")
-                    return True
-                last_size = current_size
-            except FileNotFoundError:
-                return False
-            self.logger.debug("Waiting for file to become stable", filename=str(filename))
-            time.sleep(STABLE_FILE_DELAY_SECONDS)
+        with structlog.contextvars.bound_contextvars(filename=str(filename)):
+            while time.time() - start_time < timeout:
+                try:
+                    current_size = filename.stat().st_size
+                    if current_size == last_size:
+                        self.logger.debug("File is stable")
+                        return True
+                    last_size = current_size
+                except FileNotFoundError:
+                    return False
+                self.logger.debug("Waiting for file to become stable", filename=str(filename))
+                time.sleep(STABLE_FILE_DELAY_SECONDS)
 
-        self.logger.warning("File not stable, timeout reached")
+            self.logger.warning("File not stable, timeout reached")
 
         return False
 
