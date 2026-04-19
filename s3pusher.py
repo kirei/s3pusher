@@ -126,11 +126,12 @@ def get_object_kvs(fields_str: str) -> dict[str, str]:
             raise ValueError(f"Invalid field format: '{field}' (expected 'key=value')")
 
         k, v = field.split("=", 1)
-        if k in RESERVED_FIELD_NAMES:
-            raise ValueError(f"Field name '{k}' is reserved and cannot be used")
 
         k = k.strip()
         v = v.strip()
+
+        if k in RESERVED_FIELD_NAMES:
+            raise ValueError(f"Field name '{k}' is reserved and cannot be used")
 
         if not k:
             raise ValueError("Field with empty key")
