@@ -16,6 +16,8 @@ EXCEPTION_DELAY_SECONDS = 60
 
 logger = structlog.get_logger()
 
+RESERVED_FIELD_NAMES = {"year", "month", "day", "hour", "minute", "second", "uuid"}
+
 
 class ThePusher(FileSystemEventHandler):
     def __init__(self, bucket: str | None, object_kvs: dict[str, str] | None = None) -> None:
@@ -161,7 +163,12 @@ def main():
         for field in fields_str.split(","):
             if "=" in field:
                 k, v = field.split("=", 1)
+                if k in RESERVED_FIELD_NAMES:
+                    logger.warning("Field name '%s' is reserved and cannot be used, skipping", k)
+                    continue
                 object_kvs[k] = v
+            else:
+                logger.warning("Invalid field format '%s', expected key=value, skipping", field)
 
     # Add hostname to object_kvs if configured via environment variable (for backwards compatibility)
     if hostname := os.getenv("S3PUSHER_HOSTNAME"):
