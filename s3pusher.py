@@ -58,7 +58,7 @@ class ThePusher(FileSystemEventHandler):
             s3_object_key = self.get_s3_object_key(filename=filename)
 
             if not self.bucket:
-                self.logger.warning("No bucket configured, skipping upload to %s", s3_object_key)
+                self.logger.warning(f"No bucket configured, skipping upload to {s3_object_key}")
                 return
 
             try:
