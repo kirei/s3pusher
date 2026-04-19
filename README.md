@@ -37,7 +37,7 @@ Files will be uploaded to the specified bucket in the following format:
 year=YYYY/month=MM/day=DD/hour=HH/minute=MM/second=SS/uuid=UUID/FILENAME
 ```
 
-If fields provider=xyzzy,hostname=host is specified, the format is:
+If `--fields provider=xyzzy,hostname=host` is specified, the format is:
 
 ```
 year=YYYY/month=MM/day=DD/hour=HH/minute=MM/second=SS/provider=xyzzy/hostname=host/uuid=UUID/FILENAME
