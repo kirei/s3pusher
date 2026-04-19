@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import re
 import time
 import uuid
 from datetime import UTC, datetime
@@ -17,6 +18,7 @@ EXCEPTION_DELAY_SECONDS = 60
 logger = structlog.get_logger()
 
 RESERVED_FIELD_NAMES = {"year", "month", "day", "hour", "minute", "second", "uuid"}
+FIELD_KV_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
 class ThePusher(FileSystemEventHandler):
@@ -116,6 +118,33 @@ class ThePusher(FileSystemEventHandler):
         return False
 
 
+def get_object_kvs(fields_str: str) -> dict[str, str]:
+    object_kvs: dict[str, str] = {}
+
+    for field in fields_str.split(","):
+        if "=" not in field:
+            raise ValueError(f"Invalid field format: '{field}' (expected 'key=value')")
+
+        k, v = field.split("=", 1)
+        if k in RESERVED_FIELD_NAMES:
+            raise ValueError(f"Field name '{k}' is reserved and cannot be used")
+
+        k = k.strip()
+        v = v.strip()
+
+        if not k:
+            raise ValueError("Field with empty key")
+        if not v:
+            raise ValueError(f"Field value for key '{k}' is empty")
+
+        if FIELD_KV_RE.match(k) and FIELD_KV_RE.match(v):
+            object_kvs[k] = v
+        else:
+            raise ValueError(f"Invalid field key or value: '{field}'")
+
+    return object_kvs
+
+
 def main():
 
     parser = argparse.ArgumentParser(description="S3 Pusher")
@@ -160,15 +189,7 @@ def main():
     object_kvs: dict[str, str] = {}
 
     if fields_str := (args.fields or os.getenv("S3PUSHER_FIELDS")):
-        for field in fields_str.split(","):
-            if "=" in field:
-                k, v = field.split("=", 1)
-                if k in RESERVED_FIELD_NAMES:
-                    logger.warning("Field name '%s' is reserved and cannot be used, skipping", k)
-                    continue
-                object_kvs[k] = v
-            else:
-                logger.warning("Invalid field format '%s', expected key=value, skipping", field)
+        object_kvs = get_object_kvs(fields_str)
 
     # Add hostname to object_kvs if configured via environment variable (for backwards compatibility)
     if hostname := os.getenv("S3PUSHER_HOSTNAME"):
