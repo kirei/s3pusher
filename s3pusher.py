@@ -58,7 +58,6 @@ class ThePusher(FileSystemEventHandler):
                 return
 
             try:
-                s3_client = boto3.client("s3")
                 with structlog.contextvars.bound_contextvars(s3_bucket=self.bucket, s3_object_key=s3_object_key):
                     self.logger.debug("Uploading file")
                     s3_client = boto3.client("s3")
