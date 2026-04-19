@@ -21,6 +21,8 @@ options:
   --debug              Enable debugging
 ```
 
+The environment variable `S3PUSHER_HOSTNAME` may also be used to set field `hostname`.
+
 
 ## Authentication
 
