@@ -197,15 +197,18 @@ def main():
 
     object_kvs: dict[str, str] = {}
 
-    if fields_str := (args.fields or os.getenv("S3PUSHER_FIELDS")):
-        object_kvs = get_object_kvs(fields_str)
+    try:
+        if fields_str := (args.fields or os.getenv("S3PUSHER_FIELDS")):
+            object_kvs = get_object_kvs(fields_str)
 
-    # Add hostname to object_kvs if configured via environment variable (for backwards compatibility)
-    if hostname := os.getenv("S3PUSHER_HOSTNAME"):
-        if FIELD_KV_RE.match(hostname):
-            object_kvs["hostname"] = hostname
-        else:
-            raise ValueError(f"Invalid hostname value '{hostname}'")
+        # Add hostname to object_kvs if configured via environment variable (for backwards compatibility)
+        if hostname := os.getenv("S3PUSHER_HOSTNAME"):
+            if FIELD_KV_RE.match(hostname):
+                object_kvs["hostname"] = hostname
+            else:
+                raise ValueError(f"Invalid hostname value '{hostname}'")
+    except ValueError as exc:
+        parser.error(str(exc))
 
     if object_kvs:
         logger.info("Configured with object fields %s", object_kvs)
