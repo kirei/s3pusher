@@ -1,4 +1,5 @@
 {
     "ruff.lineLength": 120,
-    "editor.defaultFormatter": "charliermarsh.ruff"
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "ruff.format.preview": true
 }

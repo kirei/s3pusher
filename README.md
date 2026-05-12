@@ -16,9 +16,12 @@ positional arguments:
 options:
   -h, --help           show this help message and exit
   --bucket BUCKET      S3 bucket name (S3PUSHER_BUCKET environment variable can also be used)
-  --hostname HOSTNAME  Hostname to include in S3 object key (S3PUSHER_HOSTNAME environment variable can also be used)  --log-json           Log in JSON format
+  --fields FIELDS      Comma separated list of key=value pairs to include in S3 object key (S3PUSHER_FIELDS environment variable can also be used)
+  --log-json           Log in JSON format
   --debug              Enable debugging
 ```
+
+The environment variable `S3PUSHER_HOSTNAME` may also be used to set field `hostname`.
 
 
 ## Authentication
@@ -31,5 +34,11 @@ Environment variables used for authentication can be found in the [Boto3 documen
 Files will be uploaded to the specified bucket in the following format:
 
 ```
-year=YYYY/month=MM/day=DD/hour=HH/minute=MM/second=SS/hostname=HOSTNAME/uuid=UUID/FILENAME
+year=YYYY/month=MM/day=DD/hour=HH/minute=MM/second=SS/uuid=UUID/FILENAME
+```
+
+If `--fields provider=xyzzy,hostname=host` is specified, the format is:
+
+```
+year=YYYY/month=MM/day=DD/hour=HH/minute=MM/second=SS/provider=xyzzy/hostname=host/uuid=UUID/FILENAME
 ```
